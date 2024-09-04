@@ -187,6 +187,7 @@ func (r *ThanosQueryReconciler) buildQuerier(ctx context.Context, query monitori
 		LogLevel:             query.Spec.LogLevel,
 		LogFormat:            query.Spec.LogFormat,
 		ResourceRequirements: query.Spec.ResourceRequirements,
+		EnableServiceMonitor: query.Spec.EnableSelfMonitor,
 	}.ApplyDefaults()
 
 	endpoints, err := r.getStoreAPIServiceEndpoints(ctx, query)

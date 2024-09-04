@@ -36,6 +36,8 @@ type Options struct {
 	// LogFormat is the log format for the component
 	LogFormat      *string
 	containerImage string
+	// EnableServiceMonitor is a flag to enable ServiceMonitor
+	EnableServiceMonitor *bool
 }
 
 // ApplyDefaults applies the default values to the options
