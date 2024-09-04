@@ -36,9 +36,8 @@ type QuerierOptions struct {
 	LookbackDelta string
 	MaxConcurrent int
 
-	Endpoints            []Endpoint
-	EnableServiceMonitor bool
-	Additional           manifests.Additional
+	Endpoints  []Endpoint
+	Additional manifests.Additional
 }
 
 type EndpointType string
@@ -64,7 +63,7 @@ func BuildQuerier(opts QuerierOptions) []client.Object {
 	objs = append(objs, manifests.BuildServiceAccount(opts.Options))
 	objs = append(objs, NewQuerierDeployment(opts))
 	objs = append(objs, NewQuerierService(opts))
-	if opts.EnableServiceMonitor {
+	if opts.Options.EnableServiceMonitor {
 		objs = append(objs, manifests.BuildServiceMonitor(opts.Options, fmt.Sprintf("%d", HTTPPort)))
 	}
 	return objs

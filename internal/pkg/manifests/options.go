@@ -37,7 +37,7 @@ type Options struct {
 	LogFormat      *string
 	containerImage string
 	// EnableServiceMonitor is a flag to enable ServiceMonitor
-	EnableServiceMonitor *bool
+	EnableServiceMonitor bool
 }
 
 // ApplyDefaults applies the default values to the options
