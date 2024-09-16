@@ -19,12 +19,13 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"github.com/thanos-community/thanos-operator/internal/pkg/manifests"
-	"github.com/thanos-community/thanos-operator/internal/pkg/manifests/store"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/thanos-community/thanos-operator/internal/pkg/manifests"
+	"github.com/thanos-community/thanos-operator/internal/pkg/manifests/store"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
