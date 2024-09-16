@@ -21,7 +21,7 @@ func TestBuildServiceMonitor(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			sm := BuildServiceMonitor(tc.opts, "9090")
+			sm := BuildServiceMonitor(tc.opts, "http")
 			if sm.GetName() != tc.opts.Name {
 				t.Errorf("expected service monitor name to be %s, got %s", tc.opts.Name, sm.GetName())
 			}
