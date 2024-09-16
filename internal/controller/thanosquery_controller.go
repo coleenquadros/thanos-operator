@@ -170,7 +170,7 @@ func (r *ThanosQueryReconciler) syncResources(ctx context.Context, query monitor
 			"resource", obj.GetName(), "namespace", obj.GetNamespace(),
 		)
 	}
-	if query.Spec.EnableSelfMonitor == false {
+	if !query.Spec.EnableSelfMonitor {
 		err := manifests.DeleteServiceMonitor(ctx, r.Client, query.Name, query.Namespace)
 		if err != nil {
 			r.logger.Error(err, "failed to delete ServiceMonitor")
