@@ -68,6 +68,8 @@ var _ = Describe("ThanosQuery Controller", Ordered, func() {
 					Name: ns,
 				},
 			})).Should(Succeed())
+			By("installing Prometheus Operator")
+			Expect(utils.InstallPrometheusOperator()).Should(Succeed())
 		})
 
 		AfterEach(func() {
@@ -281,6 +283,23 @@ var _ = Describe("ThanosQuery Controller", Ordered, func() {
 
 					return nil
 				}, time.Second*10, time.Second*10).Should(Succeed())
+			})
+
+			By("removing service monitor when disabled", func() {
+				query := &monitoringthanosiov1alpha1.ThanosQuery{}
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: resourceName, Namespace: ns}, query)
+				Expect(err).To(BeNil())
+
+				Expect(utils.VerifyServiceMonitor(k8sClient, resourceName, ns)).To(BeTrue())
+
+				enableSelfMonitor := false
+				query.Spec.EnableSelfMonitor = &enableSelfMonitor
+				err = k8sClient.Update(context.Background(), query)
+				Expect(err).To(BeNil())
+
+				Eventually(func() bool {
+					return utils.VerifyServiceMonitorDeleted(k8sClient, resourceName, ns)
+				}, time.Minute*5, time.Second*10).Should(BeTrue())
 			})
 		})
 	})

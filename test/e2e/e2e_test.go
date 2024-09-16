@@ -58,6 +58,8 @@ const (
 	queryName = "example-query"
 
 	rulerName = "example-ruler"
+
+	prometheusPort = 9090
 )
 
 var _ = Describe("controller", Ordered, func() {
@@ -381,6 +383,33 @@ var _ = Describe("controller", Ordered, func() {
 				)
 			}, time.Minute*1, time.Second*10).Should(BeTrue())
 		})
+
+		It("Prometheus should discover Thanos Query as a target", func() {
+			pods := &corev1.PodList{}
+			selector := client.MatchingLabels{
+				"prometheus": "test-prometheus",
+			}
+			err := c.List(context.Background(), pods, selector, &client.ListOptions{Namespace: "default"})
+			Expect(err).To(BeNil())
+			Expect(len(pods.Items)).To(Equal(1))
+
+			pod := pods.Items[0].Name
+			port := intstr.IntOrString{IntVal: prometheusPort}
+			cancelFn, err := utils.StartPortForward(context.Background(), port, "https", pod, "default")
+			Expect(err).To(BeNil())
+			defer cancelFn()
+
+			Eventually(func() error {
+				promResp, err := utils.QueryPrometheus("up{service=\"" + queryName + "\"}")
+				if err != nil {
+					return err
+				}
+				if promResp.Data.Result[0].Metric["service"] != queryName {
+					return fmt.Errorf("query service is not up in Prometheus")
+				}
+				return nil
+			}, time.Minute*1, time.Second*5).Should(Succeed())
+		})
 	})
 
 	Context("Thanos Ruler", func() {
@@ -513,46 +542,6 @@ var _ = Describe("controller", Ordered, func() {
 		It("should create a ConfigMap with the correct cache configuration", func() {
 			Eventually(func() bool {
 				return utils.VerifyConfigMapContents(c, "thanos-store-inmemory-config", namespace, "config.yaml", store.InMemoryConfig)
-			}, time.Minute*5, time.Second*10).Should(BeTrue())
-		})
-	})
-
-	Context("Thanos Query Service Monitor", func() {
-		// recognize Thanos query as target in prometheus
-		//It("Prometheus should discover Thanos Query as a target", func() {
-		//	prometheusService := &corev1.Service{}
-		//	err := c.Get(context.Background(), client.ObjectKey{Name: "prometheus-operated", Namespace: "default"}, prometheusService)
-		//	Expect(err).To(BeNil())
-		//
-		//cmd := exec.Command("kubectl", "port-forward", "-n", "default", "svc/"+prometheusService.Name, "9090:9090")
-		//go func() {
-		//	if err := cmd.Run(); err != nil {
-		//		fmt.Println("Error running port-forward:", err)
-		//	}
-		//}()
-		//
-		//time.Sleep(5 * time.Second) // Wait for port-forward to establish
-		//
-		//curlCmd := exec.Command("curl", "http://localhost:9090/api/v1/targets")
-		//output, err := utils.Run(curlCmd)
-		//Expect(err).To(BeNil())
-		//Expect(output).To(ContainSubstring("example-query.thanos-operator-system.svc.cluster.local:9090"))
-		//})
-		It("should remove service monitor when disabled", func() {
-			query := &v1alpha1.ThanosQuery{}
-			err := c.Get(context.Background(), client.ObjectKey{Name: queryName, Namespace: namespace}, query)
-			Expect(err).To(BeNil())
-
-			fmt.Print(query.Spec.CommonThanosFields.EnableSelfMonitor)
-
-			Expect(utils.VerifyServiceMonitor(c, queryName, namespace)).To(BeTrue())
-
-			query.Spec.CommonThanosFields.EnableSelfMonitor = false
-			err = c.Update(context.Background(), query)
-			Expect(err).To(BeNil())
-
-			Eventually(func() bool {
-				return utils.VerifyServiceMonitorDeleted(c, queryName, namespace)
 			}, time.Minute*5, time.Second*10).Should(BeTrue())
 		})
 	})
