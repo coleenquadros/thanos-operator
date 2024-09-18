@@ -23,6 +23,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/thanos-community/thanos-operator/test/utils"
+
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -66,7 +68,11 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "..", "config", "crd", "bases"),
+			filepath.Join("..", "..", "test", "configs", "service-monitor.yaml"), // Add this line
+		},
+
 		ErrorIfCRDPathMissing: true,
 
 		// The BinaryAssetsDirectory is only required if you want to run the tests directly
@@ -78,6 +84,8 @@ var _ = BeforeSuite(func() {
 			fmt.Sprintf("1.29.0-%s-%s", runtime.GOOS, runtime.GOARCH)),
 	}
 
+	By("installing Prometheus Operator")
+	Expect(utils.InstallPrometheusOperator()).Should(Succeed())
 	var err error
 	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()

@@ -404,7 +404,7 @@ var _ = Describe("controller", Ordered, func() {
 				if err != nil {
 					return err
 				}
-				if promResp.Data.Result[0].Metric["service"] != queryName {
+				if len(promResp.Data.Result) > 0 && promResp.Data.Result[0].Metric["service"] != queryName {
 					return fmt.Errorf("query service is not up in Prometheus")
 				}
 				return nil

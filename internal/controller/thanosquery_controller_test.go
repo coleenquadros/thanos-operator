@@ -68,8 +68,6 @@ var _ = Describe("ThanosQuery Controller", Ordered, func() {
 					Name: ns,
 				},
 			})).Should(Succeed())
-			By("installing Prometheus Operator")
-			Expect(utils.InstallPrometheusOperator()).Should(Succeed())
 		})
 
 		AfterEach(func() {
