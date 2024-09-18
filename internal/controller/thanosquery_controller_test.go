@@ -21,16 +21,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/thanos-community/thanos-operator/internal/pkg/manifests"
+	manifestquery "github.com/thanos-community/thanos-operator/internal/pkg/manifests/query"
+	appsv1 "k8s.io/api/apps/v1"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	monitoringthanosiov1alpha1 "github.com/thanos-community/thanos-operator/api/v1alpha1"
-	"github.com/thanos-community/thanos-operator/internal/pkg/manifests"
-	manifestquery "github.com/thanos-community/thanos-operator/internal/pkg/manifests/query"
 	"github.com/thanos-community/thanos-operator/internal/pkg/manifests/receive"
 	"github.com/thanos-community/thanos-operator/test/utils"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -245,6 +246,18 @@ var _ = Describe("ThanosQuery Controller", Ordered, func() {
 				}, time.Second*30, time.Second*10).Should(Succeed())
 			})
 
+			By("removing service monitor when disabled", func() {
+				Expect(utils.VerifyServiceMonitor(k8sClient, resourceName, ns)).To(BeTrue())
+
+				enableSelfMonitor := false
+				resource.Spec.EnableSelfMonitor = &enableSelfMonitor
+				Expect(k8sClient.Update(context.Background(), resource)).Should(Succeed())
+
+				Eventually(func() bool {
+					return utils.VerifyServiceMonitorDeleted(k8sClient, resourceName, ns)
+				}, time.Minute*1, time.Second*10).Should(BeTrue())
+			})
+
 			By("checking paused state", func() {
 				isPaused := true
 				resource.Spec.Paused = &isPaused
@@ -281,23 +294,6 @@ var _ = Describe("ThanosQuery Controller", Ordered, func() {
 
 					return nil
 				}, time.Second*10, time.Second*10).Should(Succeed())
-			})
-
-			By("removing service monitor when disabled", func() {
-				query := &monitoringthanosiov1alpha1.ThanosQuery{}
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: resourceName, Namespace: ns}, query)
-				Expect(err).To(BeNil())
-
-				Expect(utils.VerifyServiceMonitor(k8sClient, resourceName, ns)).To(BeTrue())
-
-				enableSelfMonitor := false
-				query.Spec.EnableSelfMonitor = &enableSelfMonitor
-				err = k8sClient.Update(context.Background(), query)
-				Expect(err).To(BeNil())
-
-				Eventually(func() bool {
-					return utils.VerifyServiceMonitorDeleted(k8sClient, resourceName, ns)
-				}, time.Minute*5, time.Second*10).Should(BeTrue())
 			})
 		})
 	})
