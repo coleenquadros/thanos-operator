@@ -19,6 +19,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"os"
 	"os/exec"
 	"time"
@@ -70,9 +71,6 @@ var _ = Describe("controller", Ordered, func() {
 		By("installing prometheus operator")
 		Expect(utils.InstallPrometheusOperator()).To(Succeed())
 
-		By("installing prometheus")
-		Expect(utils.ApplyPrometheusCRD()).To(Succeed())
-
 		By("installing the cert-manager")
 		Expect(utils.InstallCertManager()).To(Succeed())
 
@@ -103,6 +101,10 @@ var _ = Describe("controller", Ordered, func() {
 			fmt.Println("failed to add scheme")
 			os.Exit(1)
 		}
+		if err := rbacv1.AddToScheme(scheme); err != nil {
+			fmt.Println("failed to add scheme")
+			os.Exit(1)
+		}
 
 		cl, err := client.New(config.GetConfigOrDie(), client.Options{
 			Scheme: scheme,
@@ -112,6 +114,10 @@ var _ = Describe("controller", Ordered, func() {
 			os.Exit(1)
 		}
 		c = cl
+
+		By("Setup prometheus")
+		Expect(utils.SetUpPrometheus(c)).To(Succeed())
+
 	})
 
 	AfterAll(func() {
@@ -410,6 +416,22 @@ var _ = Describe("controller", Ordered, func() {
 				return nil
 			}, time.Minute*1, time.Second*5).Should(Succeed())
 		})
+		It("Service monitor is removed when disabled in Thanos CR", func() {
+			Expect(utils.VerifyServiceMonitor(c, queryName, namespace)).To(BeTrue())
+
+			resource := &v1alpha1.ThanosQuery{}
+			err := c.Get(context.Background(), client.ObjectKey{Name: queryName, Namespace: namespace}, resource)
+			Expect(err).To(BeNil())
+
+			enableSelfMonitor := false
+			resource.Spec.EnableSelfMonitor = &enableSelfMonitor
+			Expect(c.Update(context.Background(), resource)).Should(Succeed())
+
+			Eventually(func() bool {
+				return utils.VerifyServiceMonitorDeleted(c, queryName, namespace)
+			}, time.Minute*1, time.Second*10).Should(BeTrue())
+		})
+
 	})
 
 	Context("Thanos Ruler", func() {
