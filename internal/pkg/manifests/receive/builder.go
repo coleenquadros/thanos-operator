@@ -82,7 +82,6 @@ func (opts IngesterOptions) Build() []client.Object {
 	if opts.PodDisruptionConfig != nil {
 		objs = append(objs, manifests.NewPodDisruptionBudget(name, opts.Namespace, selectorLabels, objectMetaLabels, opts.Annotations, *opts.PodDisruptionConfig))
 	}
-
 	return objs
 }
 

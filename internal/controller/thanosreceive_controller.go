@@ -21,6 +21,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/thanos-community/thanos-operator/internal/pkg/receive"
+
 	"github.com/go-logr/logr"
 
 	monitoringthanosiov1alpha1 "github.com/thanos-community/thanos-operator/api/v1alpha1"
@@ -28,8 +31,6 @@ import (
 	"github.com/thanos-community/thanos-operator/internal/pkg/manifests"
 	manifestreceive "github.com/thanos-community/thanos-operator/internal/pkg/manifests/receive"
 	controllermetrics "github.com/thanos-community/thanos-operator/internal/pkg/metrics"
-	"github.com/thanos-community/thanos-operator/internal/pkg/receive"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
@@ -156,6 +157,7 @@ func (r *ThanosReceiveReconciler) buildController(bld builder.Builder) error {
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&monitoringv1.ServiceMonitor{}).
 		Watches(
 			&discoveryv1.EndpointSlice{},
 			r.enqueueForEndpointSlice(r.Client),
@@ -272,7 +274,7 @@ func (r *ThanosReceiveReconciler) buildHashringConfig(ctx context.Context, recei
 	return json.MarshalIndent(out, "", "    ")
 }
 
-// build hashring builds out the ingesters for the ThanosReceive resource.
+// build Router builds the router for the ThanosReceive resource.
 func (r *ThanosReceiveReconciler) buildRouter(receiver monitoringthanosiov1alpha1.ThanosReceive, hashringConfig string) []client.Object {
 	if receiver.Spec.Router.Paused != nil && *receiver.Spec.Router.Paused {
 		r.logger.Info("router is paused")

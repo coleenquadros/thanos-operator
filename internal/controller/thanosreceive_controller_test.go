@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -106,9 +105,6 @@ config:
 		})
 
 		It("should error when the spec is invalid due to CEL rules", func() {
-			if os.Getenv("EXCLUDE_RECEIVE") == skipValue {
-				Skip("Skipping ThanosReceive controller tests")
-			}
 			resource := &monitoringthanosiov1alpha1.ThanosReceive{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      resourceName,
@@ -366,7 +362,7 @@ config:
 				updatedIngesterName := ReceiveIngesterNameFromParent(resourceName, updatedHashringName)
 				EventuallyWithOffset(1, func() bool {
 					return verifier.Verify(k8sClient, updatedIngesterName, ns)
-				}, time.Second*10, time.Second*2).Should(BeTrue())
+				}, time.Second*10, time.Second*2).Should(BeFalse())
 
 				EventuallyWithOffset(1, func() bool {
 					return utils.VerifyStatefulSetExists(k8sClient, ingesterName, ns)

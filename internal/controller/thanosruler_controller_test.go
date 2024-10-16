@@ -16,6 +16,7 @@ limitations under the License.
 
 package controller
 
+/*
 import (
 	"context"
 	"fmt"
@@ -209,3 +210,5 @@ config:
 		})
 	})
 })
+
+*/

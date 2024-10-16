@@ -137,7 +137,7 @@ func (r *ThanosRulerReconciler) syncResources(ctx context.Context, ruler monitor
 		r.metrics.ClientErrorsTotal.WithLabelValues(manifestruler.Name).Add(float64(errCount))
 		return fmt.Errorf("failed to create or update %d resources for the ruler", errCount)
 	}
-	if ruler.Spec.ServiceMonitorConfig != nil && ruler.Spec.ServiceMonitorConfig.Enable != nil && !*ruler.Spec.ServiceMonitorConfig.Enable {
+	if !r.hasServiceMonitorsEnabled(ruler) {
 		if errCount := r.handler.DeleteResource(ctx, []client.Object{&monitoringv1.ServiceMonitor{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      RulerNameFromParent(ruler.GetName()),
@@ -151,6 +151,10 @@ func (r *ThanosRulerReconciler) syncResources(ctx context.Context, ruler monitor
 	}
 
 	return nil
+}
+
+func (r *ThanosRulerReconciler) hasServiceMonitorsEnabled(ruler monitoringthanosiov1alpha1.ThanosRuler) bool {
+	return ruler.Spec.ServiceMonitorConfig != nil && ruler.Spec.ServiceMonitorConfig.Enable != nil && *ruler.Spec.ServiceMonitorConfig.Enable
 }
 
 func (r *ThanosRulerReconciler) buildRuler(ctx context.Context, ruler monitoringthanosiov1alpha1.ThanosRuler) ([]client.Object, error) {

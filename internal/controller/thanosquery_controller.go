@@ -161,6 +161,10 @@ func (r *ThanosQueryReconciler) syncResources(ctx context.Context, query monitor
 	return nil
 }
 
+func (r *ThanosQueryReconciler) hasServiceMonitorsEnabled(query monitoringthanosiov1alpha1.ThanosQuery) bool {
+	return query.Spec.ServiceMonitorConfig != nil && query.Spec.ServiceMonitorConfig.Enable != nil && *query.Spec.ServiceMonitorConfig.Enable
+}
+
 func (r *ThanosQueryReconciler) buildQuery(ctx context.Context, query monitoringthanosiov1alpha1.ThanosQuery) ([]client.Object, error) {
 	endpoints, err := r.getStoreAPIServiceEndpoints(ctx, query)
 	if err != nil {
